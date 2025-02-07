@@ -22,8 +22,7 @@ export default {
       this.$router.push('/settings');
     },
     logout() {
-      this.$store.dispatch('logoutUser');
-      this.$router.push('/login');
+      this.$router.push('/');
     }
   }
 };
