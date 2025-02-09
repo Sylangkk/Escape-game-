@@ -59,7 +59,12 @@
       </div>
       
       <div class="clues-container">
-        <button class="clues-button" @click="showNextClue">Indices</button>
+        <button 
+          class="clues-button" 
+          @click="showNextClue" 
+          :disabled="!selectedScreen || !getCluesForScreen(selectedScreen).length">
+          Indices
+        </button>
       </div>
     </div>
     
@@ -72,6 +77,7 @@
 
 <script>
 import EscapeGameTimer from '@/components/EscapeGameTimer.vue';
+import axios from 'axios';
 
 export default {
   name: 'ManoirDuMal',
@@ -93,41 +99,49 @@ export default {
       ],
       cluesFound: [],
       inventory: [
-        { id: 1, name: 'Clé en fer', effect: 'Ouvre une porte verrouillée' },
-        { id: 2, name: 'Lampe torche', effect: 'Éclaire les zones sombres' }
+        { id: 1, name: 'Lampe torche', effect: 'Éclaire les zones sombres' }
       ],
       screens: [
-        { id: 1, name: 'bibliotheque', image: require('@/assets/bibliothèque.jpeg'), objects: [
-          { id: 1, name: 'Livre', position: { x: 704, y: 398 } },
-          { id: 2, name: 'Tableau', position: { x: 315, y: 285 } },
-          { id: 3, name: 'Chaise', position: { x: 1339, y: 693 } }
-        ] },
-        { id: 2, name: 'galerie', description: 'Vous êtes dans le', image: require('@/assets/galerie.png'), objects: [
-          { id: 4, name: 'T1', position: { x: 43, y: 136 } },
-          { id: 5, name: 'T2', position: { x: 215, y: 215 } },
-          { id: 6, name: 'T3', position: { x: 445, y: 301 } },
-          { id: 7, name: 'T4', position: { x: 799, y: 398 } },
-          { id: 8, name: 'T5', position: { x: 1143, y: 321 } },
-          { id: 9, name: 'C1', position: { x: 190, y: 682 } },
-          { id: 10, name: 'C2', position: { x: 1153, y: 673 } },
-        ] },
-        { id: 3, name: 'Cuisine', description: 'Vous êtes dans la', image: require('@/assets/cuisine.jpeg'),objects: [
+        { id: 1, name: 'bibliotheque', image: require('@/assets/bibliothèque.jpeg'), isLocked: false, 
+          objects: [
+            { id: 1, name: 'Livre', position: { x: 704, y: 398 }, isEnigma: true }, // Ajout de l'attribut isEnigma
+            { id: 2, name: 'Tableau', position: { x: 315, y: 285 }, item: 'none' },
+            { id: 3, name: 'Chaise', position: { x: 1339, y: 693 }, item: 'none' }
+          ],
+          clues: [ "Trouvez la clé sous le tapis." ]
+        },
+        { id: 2, name: 'galerie', description: 'Vous êtes dans le', image: require('@/assets/galerie.png'), isLocked: true, isEnigma: true, 
+          objects: [
+            { id: 4, name: 'T1', position: { x: 43, y: 136 }, item: 'none' },
+            { id: 5, name: 'T2', position: { x: 215, y: 215 }, item: 'none' },
+            { id: 6, name: 'T3', position: { x: 445, y: 301 }, item: 'none' },
+            { id: 7, name: 'T4', position: { x: 799, y: 398 }, item: 'none' },
+            { id: 8, name: 'T5', position: { x: 1143, y: 321 }, item: 'none' },
+            { id: 9, name: 'C1', position: { x: 190, y: 682 }, item: 'none'},
+            { id: 10, name: 'C2', position: { x: 1153, y: 673 }, item: 'none' },
+          ],
+          clues: [ "Trouvez la clé sous le tapis." ]
+        },
+        { id: 3, name: 'Cuisine', description: 'Vous êtes dans la', image: require('@/assets/cuisine.jpeg'), isLocked: true, objects: [
           { id: 11, name: 'M1', position: { x: 634, y: 285 } },
           { id: 12, name: 'Ta1', position: { x: 594, y: 708 } },
           { id: 13, name: 'P1', position: { x: 1270, y: 141 } },
         ] },
-        { id: 4, name: 'entrée', description: 'Vous êtes dans la', image: require('@/assets/entree.jpg'), objects: [
+        { id: 4, name: 'entrée', description: 'Vous êtes dans la', image: require('@/assets/entree.jpg'), isLocked: true, objects: [
           { id: 14, name: 'Porte', position: { x: 911, y: 433 } },
           { id: 15, name: 'T6s', position: { x: 91, y: 241 } },
         ] },
-        { id: 5, name: 'controle', description: 'Vous êtes dans la', image: require('@/assets/controle.png'), objects: [
-          {id: 16, name: 'Porte1', position: { x: 135, y: 507 } },
-          {id: 17, name: 'Porte2', position: { x: 1466, y: 457 } },
-        ] },
-        { id: 6, name: 'salle à manger', description: 'Vous êtes dans le', image: require('@/assets/salle_manger.jpg') },
-        { id: 7, name: 'salle de bain', description: 'Vous êtes dans la', image: require('@/assets/salledebain.jpeg') },
-        { id: 8, name: 'salon', description: 'Vous êtes dans le', image: require('@/assets/salon.jpg') },
-        { id: 9, name: 'chambre', description: 'Vous êtes dans le', image: require('@/assets/chambre.jpg') }
+        { id: 5, name: 'controle', description: 'Vous êtes dans la', image: require('@/assets/controle.png'), isLocked: false, 
+          objects: [
+            {id: 16, name: 'Porte1', position: { x: 135, y: 507 } },
+            {id: 17, name: 'Porte2', position: { x: 1466, y: 457 } },
+          ],
+          clues: [ "Trouvez la clé sous le tapis." ]
+        },
+        { id: 6, name: 'salle à manger', description: 'Vous êtes dans le', image: require('@/assets/salle_manger.jpg'), isLocked: true, },
+        { id: 7, name: 'salle de bain', description: 'Vous êtes dans la', image: require('@/assets/salledebain.jpeg'), isLocked: true, },
+        { id: 8, name: 'salon', description: 'Vous êtes dans le', image: require('@/assets/salon.jpg'), isLocked: true, },
+        { id: 9, name: 'chambre', description: 'Vous êtes dans le', image: require('@/assets/chambre.jpg'), isLocked: true }
       ],
       selectedScreen: null,
       showDoorImage: false,
@@ -171,7 +185,12 @@ export default {
       this.startScoreCountdown();
     },
     selectScreen(screenId) {
-      this.selectedScreen = screenId;
+      const screen = this.screens.find(screen => screen.id === screenId);
+      if (screen.isLocked) {
+        alert("Cette pièce est verrouillée. Résolvez l'énigme de la pièce précédente pour y accéder.");
+      } else {
+        this.selectedScreen = screenId;
+      }
     },
     closeSelectedRoom() {
       this.selectedScreen = null;
@@ -196,6 +215,21 @@ export default {
         setTimeout(() => {
           this.closeDoor();
         }, 6000);
+      } else if (object.name === 'Porte2') {
+        const hasCode = this.inventory.some(item => item.name === 'Code secret');
+        if (hasCode) {
+          alert("Vous utilisez le code secret pour ouvrir la porte 2 de la salle de contrôle.");
+          this.showDoorImage = true; // Afficher une animation ou un effet
+          setTimeout(() => {
+            this.closeDoor();
+          }, 6000);
+        } else {
+          alert("Cette porte est verrouillée. Trouvez le code secret dans la galerie.");
+        }
+      } else if (object.name === 'Livre' && object.isEnigma) {
+        this.showEnigma(); // Afficher l'énigme de la bibliothèque
+      } else if (object.name === 'C1' && object.isEnigma) {
+        this.showGalerieEnigma(); // Afficher l'énigme de la galerie
       } else {
         alert(`Vous avez interagi avec : ${object.name}`);
         if (!this.inventory.some(item => item.id === object.id)) {
@@ -204,6 +238,49 @@ export default {
         } else {
           alert('Cet objet est déjà dans votre inventaire.');
         }
+      }
+    },
+    showEnigma() {
+      const enigmaText = `
+        Énigme : 
+        "Je suis toujours devant toi, mais tu ne peux jamais me toucher.
+        Je suis invisible, mais je peux te guider.
+        Je suis le début de la fin, et la fin de chaque lieu.
+        Qui suis-je ?"
+      `;
+      const userAnswer = prompt(enigmaText);
+
+      if (userAnswer && userAnswer.toLowerCase() === "l'avenir") {
+        alert("Bravo ! Vous avez résolu l'énigme. Une clé apparaît dans votre inventaire.");
+        this.inventory.push({ id: 999, name: 'Clé mystérieuse', effect: 'Ouvre un passage secret' });
+        this.currentScore += 500; // Ajouter 500 points pour la résolution de l'énigme
+
+        // Débloquer la pièce 2 (galerie)
+        const galerie = this.screens.find(screen => screen.id === 2);
+        if (galerie) {
+          galerie.isLocked = false;
+        }
+      } else {
+        alert("Réponse incorrecte. Essayez encore !");
+      }
+    },
+    showGalerieEnigma() {
+      const enigmaText = `
+        Énigme : 
+        "Je suis composé de quatre chiffres.
+        Le premier est le double du deuxième.
+        Le troisième est la moitié du premier.
+        Le quatrième est la somme du premier et du troisième.
+        Qui suis-je ?"
+      `;
+      const userAnswer = prompt(enigmaText);
+
+      if (userAnswer && userAnswer === "8426") {
+        alert("Bravo ! Vous avez résolu l'énigme. La porte 2 de la salle de contrôle est maintenant ouverte.");
+        this.inventory.push({ id: 1000, name: 'Code secret', effect: 'Ouvre la porte 2 de la salle de contrôle' });
+        this.currentScore += 1000; // Ajouter 1000 points pour la résolution de l'énigme
+      } else {
+        alert("Réponse incorrecte. Essayez encore !");
       }
     },
     closeDoor() {
@@ -221,12 +298,17 @@ export default {
     pauseGame() {
       alert('Jeu en pause');
     },
+    getCluesForScreen(screenId) {
+      const screen = this.screens.find(screen => screen.id === screenId);
+      return screen ? screen.clues : [];
+    },
     showNextClue() {
-      if (this.clues.length > 0) {
-        alert(this.clues[0].text);
-        this.clues.shift();
+      if (this.selectedScreen && this.getCluesForScreen(this.selectedScreen).length > 0) {
+        const clue = this.getCluesForScreen(this.selectedScreen).shift();
+        alert(clue); // Afficher l'indice
+        this.currentScore -= this.penaltyPerClue; // Retirer des points pour l'utilisation d'un indice
       } else {
-        alert("Il n'y a plus d'indices disponibles.");
+        alert("Il n'y a pas d'indices disponibles dans cette pièce.");
       }
     },
     startScoreCountdown() {
@@ -241,6 +323,30 @@ export default {
     },
     handleTimeUp() {
       alert("Le temps est écoulé ! Votre score final est : " + this.currentScore);
+    },
+    saveProgress() {
+      const progress = {
+        inventory: this.inventory,
+        currentScore: this.currentScore,
+        // Ajoutez d'autres données de progression si nécessaire
+      };
+      axios.post('http://localhost:3001/api/saveProgress', {
+        username: this.$store.state.username,
+        scenario: 'manoir-du-mal',
+        progress: JSON.stringify(progress)
+      });
+    },
+    loadProgress() {
+      axios.get('http://localhost:3001/api/loadProgress', {
+        params: { username: this.$store.state.username, scenario: 'manoir-du-mal' }
+      }).then(response => {
+        if (response.data.success) {
+          const progress = JSON.parse(response.data.progress);
+          this.inventory = progress.inventory;
+          this.currentScore = progress.currentScore;
+          // Chargez d'autres données de progression si nécessaire
+        }
+      });
     }
   }
 };

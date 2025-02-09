@@ -79,6 +79,62 @@ app.post('/api/register', async (req, res) => {
   });
 });
 
+// Route pour enregistrer le score
+app.post('/api/saveScore', (req, res) => {
+  const { username, score, scenario } = req.body;
+
+  db.query('INSERT INTO scores (username, score, scenario) VALUES (?, ?, ?);', [username, score, scenario], (err, result) => {
+    if (err) {
+      console.error(err);
+      res.status(500).json({ success: false, message: 'Erreur serveur' });
+    } else {
+      res.json({ success: true, message: 'Score enregistré avec succès' });
+    }
+  });
+});
+
+// Route pour obtenir le classement
+app.get('/api/leaderboard', (req, res) => {
+  const { scenario } = req.query;
+
+  db.query('SELECT username, score FROM scores WHERE scenario = ? ORDER BY score DESC LIMIT 10;', [scenario], (err, result) => {
+    if (err) {
+      console.error(err);
+      res.status(500).json({ success: false, message: 'Erreur serveur' });
+    } else {
+      res.json({ success: true, leaderboard: result });
+    }
+  });
+});
+
+// Route pour obtenir les statistiques
+app.get('/api/stats', (req, res) => {
+  const { username } = req.query;
+
+  db.query('SELECT COUNT(*) as gamesPlayed, AVG(score) as avgScore FROM scores WHERE username = ?;', [username], (err, result) => {
+    if (err) {
+      console.error(err);
+      res.status(500).json({ success: false, message: 'Erreur serveur' });
+    } else {
+      res.json({ success: true, stats: result[0] });
+    }
+  });
+});
+
+// Route pour sauvegarder la progression
+app.post('/api/saveProgress', (req, res) => {
+  const { username, scenario, progress } = req.body;
+
+  db.query('INSERT INTO progress (username, scenario, progress) VALUES (?, ?, ?);', [username, scenario, progress], (err, result) => {
+    if (err) {
+      console.error(err);
+      res.status(500).json({ success: false, message: 'Erreur serveur' });
+    } else {
+      res.json({ success: true, message: 'Progression sauvegardée avec succès' });
+    }
+  });
+});
+
 app.listen(port, () => {
   console.log(`Serveur écoutant sur le port ${port}`);
 });

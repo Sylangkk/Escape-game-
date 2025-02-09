@@ -4,7 +4,8 @@
       <h1 class="title">Escape Game Lobby</h1>
       <div class="menu">
         <button @click="startGame" class="menu-button">Jouer</button>
-        <button @click="goToSettings" class="menu-button">Paramètres</button>
+        <button @click="goToLeaderboard" class="menu-button">Classement</button>
+        <button @click="goToStats" class="menu-button">Statistiques du joueur</button>
         <button @click="logout" class="menu-button">Déconnexion</button>
       </div>
     </div>
@@ -18,8 +19,11 @@ export default {
     startGame() {
       this.$router.push('/manoir-du-mal');
     },
-    goToSettings() {
-      this.$router.push('/settings');
+    goToLeaderboard() {
+      this.$router.push('/leaderboard');
+    },
+    goToStats() {
+      this.$router.push('/stats');
     },
     logout() {
       this.$router.push('/');
