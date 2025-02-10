@@ -135,6 +135,24 @@ app.post('/api/saveProgress', (req, res) => {
   });
 });
 
+// Route pour charger la progression
+app.get('/api/loadProgress', (req, res) => {
+  const { username, scenario } = req.query;
+
+  db.query('SELECT progress FROM progress WHERE username = ? AND scenario = ? ORDER BY id DESC LIMIT 1;', [username, scenario], (err, result) => {
+    if (err) {
+      console.error(err);
+      res.status(500).json({ success: false, message: 'Erreur serveur' });
+    } else {
+      if (result.length > 0) {
+        res.json({ success: true, progress: result[0].progress });
+      } else {
+        res.json({ success: false, message: 'Aucune progression trouvée' });
+      }
+    }
+  });
+});
+
 app.listen(port, () => {
   console.log(`Serveur écoutant sur le port ${port}`);
 });

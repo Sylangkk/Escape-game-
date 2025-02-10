@@ -45,6 +45,8 @@ export default {
         });
 
         if (response.data.success) {
+          // Stocker le username dans Vuex
+          this.$store.commit('setUser', this.username);
           this.$router.push('/lobby');
         } else {
           this.errorMessage = response.data.message || 'Identifiants incorrects';

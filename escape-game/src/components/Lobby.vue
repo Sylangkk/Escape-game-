@@ -6,6 +6,7 @@
         <button @click="startGame" class="menu-button">Jouer</button>
         <button @click="goToLeaderboard" class="menu-button">Classement</button>
         <button @click="goToStats" class="menu-button">Statistiques du joueur</button>
+        <button @click="loadProgress" class="menu-button">Charger la progression</button>
         <button @click="logout" class="menu-button">Déconnexion</button>
       </div>
     </div>
@@ -21,6 +22,9 @@ export default {
     },
     goToLeaderboard() {
       this.$router.push('/leaderboard');
+    },
+    loadProgress() {
+      this.$router.push('/manoir-du-mal?load=true');
     },
     goToStats() {
       this.$router.push('/stats');

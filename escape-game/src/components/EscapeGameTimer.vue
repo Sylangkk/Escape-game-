@@ -8,16 +8,16 @@
 
 <script>
 export default {
-  name: 'EscapeGameTimer', // ✅ Nom mis à jour
+  name: 'EscapeGameTimer',
   props: {
     initialTime: {
       type: Number,
-      required: true // Temps en secondes (ex: 1800 pour 30 min)
+      required: true
     }
   },
   data() {
     return {
-      timeLeft: this.initialTime,
+      timeLeft: this.initialTime, // Initialiser timeLeft avec initialTime
       timerInterval: null
     };
   },
@@ -35,7 +35,7 @@ export default {
           this.timeLeft--;
         } else {
           clearInterval(this.timerInterval);
-          this.$emit('time-up'); // ✅ Événement à la fin du timer
+          this.$emit('time-up');
         }
       }, 1000);
     }

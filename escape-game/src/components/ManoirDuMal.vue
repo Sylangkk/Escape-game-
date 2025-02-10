@@ -12,6 +12,12 @@
       Votre navigateur ne supporte pas l'élément audio.
     </audio>
 
+    <!-- Audio pour la porte 2 -->
+    <audio ref="door2Audio" @ended="closeDoor">
+      <source :src="require('@/assets/iamcommingforyou.mp3')" type="audio/mpeg">
+      Votre navigateur ne supporte pas l'élément audio.
+    </audio>
+
     <div v-if="showDoorImage" class="door-image-container">
       <img :src="doorImage" alt="Porte ouverte" class="door-image" />
     </div>
@@ -42,8 +48,8 @@
         <button class="pause-button" @click="pauseGame">Pause</button>
       </div>
 
-      <EscapeGameTimer :initialTime="1800" @time-up="handleTimeUp" />
-
+      <EscapeGameTimer :initialTime="currentTimer" @time-up="handleTimeUp" />
+      
       <div class="score-container">
         <h3>Score: {{ currentScore }}</h3>
       </div>
@@ -89,6 +95,7 @@ export default {
       gameStarted: false,
       timerStarted: false,
       playerName: 'Wdife',
+      initialTime: 1800,
       currentScore: 10000,
       record: { name: 'Wdife', score: 200 },
       currentTimer: 1800,
@@ -105,8 +112,8 @@ export default {
         { id: 1, name: 'bibliotheque', image: require('@/assets/bibliothèque.jpeg'), isLocked: false, 
           objects: [
             { id: 1, name: 'Livre', position: { x: 704, y: 398 }, isEnigma: true }, // Ajout de l'attribut isEnigma
-            { id: 2, name: 'Tableau', position: { x: 315, y: 285 }, item: 'none' },
-            { id: 3, name: 'Chaise', position: { x: 1339, y: 693 }, item: 'none' }
+            { id: 2, name: 'Tableau', position: { x: 315, y: 285 }, isUseless: true }, // Tableau (ne sert à rien)
+            { id: 3, name: 'Chaise', position: { x: 1339, y: 693 }, isUseless: true }  // Chaise (ne sert à rien)
           ],
           clues: [ "Trouvez la clé sous le tapis." ]
         },
@@ -117,8 +124,7 @@ export default {
             { id: 6, name: 'T3', position: { x: 445, y: 301 }, item: 'none' },
             { id: 7, name: 'T4', position: { x: 799, y: 398 }, item: 'none' },
             { id: 8, name: 'T5', position: { x: 1143, y: 321 }, item: 'none' },
-            { id: 9, name: 'C1', position: { x: 190, y: 682 }, item: 'none'},
-            { id: 10, name: 'C2', position: { x: 1153, y: 673 }, item: 'none' },
+            { id: 9, name: 'Couloir', position: { x: 1153, y: 673 }, item: 'none' },
           ],
           clues: [ "Trouvez la clé sous le tapis." ]
         },
@@ -151,14 +157,20 @@ export default {
     };
   },
   mounted() {
-    this.playAudio(); // Jouer l'audio dès que le composant est monté
-    setTimeout(() => {
-      this.showOverlay = false;
-      this.showButton = true;
-    }, 18000); // Conserver le délai pour l'affichage de l'overlay et du bouton
+    if (this.$route.query.load) {
+      this.isLoadingProgress = true;
+      this.loadProgress(); // Charger la progression
+    } else {
+      this.playAudio(); // Jouer l'audio seulement si aucune progression n'est chargée
+      setTimeout(() => {
+        this.showOverlay = false;
+        this.showButton = true;
+      }, 18000); // Conserver le délai pour l'affichage de l'overlay et du bouton
+    }
   },
   methods: {
     playAudio() {
+      if (this.isLoadingProgress) return; // Ne pas jouer l'audio si une progression est en cours de chargement
       const audio = this.$refs.audioPlayer;
       if (audio) {
         audio.play();
@@ -181,6 +193,11 @@ export default {
       this.timerStarted = true;
       this.showButton = false;
       this.gameStarted = true;
+
+      // Réinitialiser le timer si nécessaire
+      if (this.currentTimer <= 0) {
+        this.currentTimer = this.initialTime;
+      }
 
       this.startScoreCountdown();
     },
@@ -207,6 +224,7 @@ export default {
     interactWithObject(object) {
       if (object.name === 'Porte1') {
         this.showDoorImage = true;
+        this.doorImage = require('@/assets/femme.png'); // Image pour la porte 1
         const audio = this.$refs.doorAudio;
         if (audio) {
           audio.play();
@@ -216,20 +234,22 @@ export default {
           this.closeDoor();
         }, 6000);
       } else if (object.name === 'Porte2') {
-        const hasCode = this.inventory.some(item => item.name === 'Code secret');
-        if (hasCode) {
-          alert("Vous utilisez le code secret pour ouvrir la porte 2 de la salle de contrôle.");
-          this.showDoorImage = true; // Afficher une animation ou un effet
-          setTimeout(() => {
-            this.closeDoor();
-          }, 6000);
-        } else {
-          alert("Cette porte est verrouillée. Trouvez le code secret dans la galerie.");
+        this.showDoorImage = true;
+        this.doorImage = require('@/assets/cave.jpeg'); // Image pour la porte 2
+        const audio = this.$refs.door2Audio;
+        if (audio) {
+          audio.play();
         }
+
+        setTimeout(() => {
+          this.closeDoor();
+        }, 8000); // Durée de l'audio "iamcomingforyou.mp3"
       } else if (object.name === 'Livre' && object.isEnigma) {
         this.showEnigma(); // Afficher l'énigme de la bibliothèque
       } else if (object.name === 'C1' && object.isEnigma) {
         this.showGalerieEnigma(); // Afficher l'énigme de la galerie
+      } else if (object.isUseless) {
+        alert("Vous n'avez rien trouvé grâce à cet objet."); // Message pour les objets inutiles
       } else {
         alert(`Vous avez interagi avec : ${object.name}`);
         if (!this.inventory.some(item => item.id === object.id)) {
@@ -238,6 +258,17 @@ export default {
         } else {
           alert('Cet objet est déjà dans votre inventaire.');
         }
+      }
+    },
+    closeDoor() {
+      this.showDoorImage = false;
+      const audio1 = this.$refs.doorAudio;
+      const audio2 = this.$refs.door2Audio;
+      if (audio1) {
+        audio1.pause();
+      }
+      if (audio2) {
+        audio2.pause();
       }
     },
     showEnigma() {
@@ -283,15 +314,9 @@ export default {
         alert("Réponse incorrecte. Essayez encore !");
       }
     },
-    closeDoor() {
-      this.showDoorImage = false;
-      const audio = this.$refs.doorAudio;
-      if (audio) {
-        audio.pause();
-      }
-    },
     exitGame() {
       if (confirm('Voulez-vous vraiment quitter le jeu ?')) {
+        this.saveProgress();
         this.$router.push('/');
       }
     },
@@ -314,10 +339,13 @@ export default {
     startScoreCountdown() {
       if (!this.timerStarted) return;
       const interval = setInterval(() => {
-        if (this.timerStarted && this.currentScore > 0) {
-          this.currentScore -= this.penaltyPerSecond;
+        if (this.timerStarted && this.currentTimer > 0) {
+          this.currentTimer--; // Décrémenter currentTimer
         } else {
           clearInterval(interval);
+          if (this.currentTimer <= 0) {
+            this.handleTimeUp(); // Appeler handleTimeUp lorsque le temps est écoulé
+          }
         }
       }, 1000);
     },
@@ -328,24 +356,55 @@ export default {
       const progress = {
         inventory: this.inventory,
         currentScore: this.currentScore,
-        // Ajoutez d'autres données de progression si nécessaire
+        selectedScreen: this.selectedScreen,
+        screens: this.screens,
+        cluesFound: this.cluesFound,
+        timerStarted: this.timerStarted,
+        gameStarted: this.gameStarted,
+        currentTimer: this.currentTimer // Assurez-vous que cette ligne est présente
       };
       axios.post('http://localhost:3001/api/saveProgress', {
-        username: this.$store.state.username,
+        username: this.$store.getters.getUsername,
         scenario: 'manoir-du-mal',
         progress: JSON.stringify(progress)
+      }).then(response => {
+        if (response.data.success) {
+          alert('Progression sauvegardée avec succès');
+        } else {
+          alert('Erreur lors de la sauvegarde de la progression');
+        }
       });
     },
     loadProgress() {
       axios.get('http://localhost:3001/api/loadProgress', {
-        params: { username: this.$store.state.username, scenario: 'manoir-du-mal' }
+        params: { username: this.$store.getters.getUsername, scenario: 'manoir-du-mal' }
       }).then(response => {
         if (response.data.success) {
           const progress = JSON.parse(response.data.progress);
           this.inventory = progress.inventory;
           this.currentScore = progress.currentScore;
-          // Chargez d'autres données de progression si nécessaire
+          this.selectedScreen = progress.selectedScreen;
+          this.screens = progress.screens;
+          this.cluesFound = progress.cluesFound;
+          this.timerStarted = progress.timerStarted;
+          this.gameStarted = progress.gameStarted;
+          this.currentTimer = progress.currentTimer; // Assurez-vous que cette ligne est présente
+
+          // Démarrer le jeu automatiquement après le chargement de la progression
+          this.showOverlay = false;
+          this.showButton = false;
+          this.timerStarted = true;
+          this.gameStarted = true;
+
+          // Démarrer le timer avec la valeur sauvegardée
+          this.startScoreCountdown();
+
+          alert('Progression chargée avec succès');
+        } else {
+          alert('Aucune progression trouvée');
         }
+      }).finally(() => {
+        this.isLoadingProgress = false; // Fin du chargement
       });
     }
   }
@@ -380,7 +439,7 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-left: 2.5vw;
+  margin-left: 9vw;
   width: 80%;
   z-index: 999;
 }

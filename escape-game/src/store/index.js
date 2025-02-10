@@ -3,18 +3,19 @@ import { createStore } from 'vuex'
 export default createStore({
     state () {
       return {
-        count: 0
+        count: 0,
+        username: '',
       }
     },
     mutations: {
-      increment (state) {
-        state.count++
+      setUser(state, username) {
+        state.username = username
       }
     },
     getters: {
-      doubleCount (state) {
-        return state.count * 2
-        }
+      getUsername(state) {
+        return state.username
+      }
     }, 
     actions: {
       incrementAsync ({ commit }) {
