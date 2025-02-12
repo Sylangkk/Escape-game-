@@ -18,6 +18,12 @@
       Votre navigateur ne supporte pas l'élément audio.
     </audio>
 
+    <!-- Audio pour la baignoire -->
+    <audio ref="baignoireAudio" @ended="handleBaignoireAudioEnd">
+      <source :src="require('@/assets/baignoire.mp3')" type="audio/mpeg">
+      Votre navigateur ne supporte pas l'élément audio.
+    </audio>
+
     <div v-if="showDoorImage" class="door-image-container">
       <img :src="doorImage" alt="Porte ouverte" class="door-image" />
     </div>
@@ -79,6 +85,26 @@
     </div>
     <button v-if="showButton" class="play-button" @click="startGame">Jouer</button>
   </div>
+
+  <div v-if="showRepasImage" class="repas-image-container" @click="closeRepasImage">
+    <div class="repas-image-content" @click.stop>
+      <img :src="require('@/assets/repas.png')" alt="Repas" class="repas-image" />
+      <button class="close-button" @click="closeRepasImage">Fermer</button>
+    </div>
+  </div>
+
+  <div v-if="showMedaillonImage" class="medaillon-image-container" @click="closeMedaillonImage">
+    <div class="medaillon-image-content" @click.stop>
+      <img 
+        :src="require('@/assets/medaillon.png')" 
+        alt="Médaillon" 
+        class="medaillon-image" 
+        @click="handleMedaillonClick"
+      />
+      <button class="close-button" @click="closeMedaillonImage">Fermer</button>
+    </div>
+  </div>
+
 </template>
 
 <script>
@@ -90,6 +116,7 @@ export default {
   components: { EscapeGameTimer },
   data() {
     return {
+      showRepasImage: false,
       showOverlay: true,
       showButton: false,
       gameStarted: false,
@@ -99,6 +126,7 @@ export default {
       currentScore: 10000,
       record: { name: 'Wdife', score: 200 },
       currentTimer: 1800,
+      showMedaillonImage: false, // Nouvelle variable pour contrôler l'affichage de medaillon.png
       clues: [
         { id: 1, text: 'Trouvez la clé sous le tapis.' },
         { id: 2, text: 'Regardez derrière le tableau.' },
@@ -117,37 +145,95 @@ export default {
           ],
           clues: [ "Trouvez la clé sous le tapis." ]
         },
-        { id: 2, name: 'galerie', description: 'Vous êtes dans le', image: require('@/assets/galerie.png'), isLocked: true, isEnigma: true, 
+        {
+          id: 2,
+          name: 'galerie',
+          description: 'Vous êtes dans le',
+          image: require('@/assets/galerie.png'),
+          isLocked: true,
+          isEnigma: true,
           objects: [
-            { id: 4, name: 'T1', position: { x: 43, y: 136 }, item: 'none' },
-            { id: 5, name: 'T2', position: { x: 215, y: 215 }, item: 'none' },
-            { id: 6, name: 'T3', position: { x: 445, y: 301 }, item: 'none' },
-            { id: 7, name: 'T4', position: { x: 799, y: 398 }, item: 'none' },
-            { id: 8, name: 'T5', position: { x: 1143, y: 321 }, item: 'none' },
-            { id: 9, name: 'Couloir', position: { x: 1153, y: 673 }, item: 'none' },
+            { id: 4, name: 'T1', position: { x: 43, y: 136 }, age: 25 }, // Tableau 1
+            { id: 5, name: 'T2', position: { x: 215, y: 215 }, age: 32 }, // Tableau 2
+            { id: 6, name: 'T3', position: { x: 445, y: 301 }, age: 18 }, // Tableau 3
+            { id: 7, name: 'T4', position: { x: 799, y: 398 }, age: 47 }, // Tableau 4
+            { id: 8, name: 'T5', position: { x: 1143, y: 321 }, age: 56 }, // Tableau 5
+            { id: 9, name: 'Couloir', position: { x: 1153, y: 673 }, item: 'none' }, // Couloir
           ],
+          clues: ["Trouvez la clé sous le tapis."]
+        },
+        { id: 3, name: 'Cuisine', description: 'Vous êtes dans la', image: require('@/assets/cuisine.jpeg'), isLocked: true, objects: 
+          [
+            { id: 11, name: 'M1', position: { x: 634, y: 285 }, isUseless: true },
+            { id: 12, name: 'Ta1', position: { x: 594, y: 708 }, isUseless: true },
+            { id: 13, name: 'P1', position: { x: 1270, y: 141 }, isUseless: true },
+            { id: 14, name: 'Placard', position: { x: 78, y: 713 }, isUseless: true },
+            { id: 15, name: 'Tiroir', position: { x: 1172, y: 707 } }
+          ],
+        clues: [ "Trouvez la clé sous le tapis." ]
+        },
+        { id: 4, name: 'entrée', description: 'Vous êtes dans la', image: require('@/assets/entree.jpg'), isLocked: true, objects: [
+            { id: 14, name: 'Porte', position: { x: 911, y: 433 } },
+            { id: 15, name: 'T6s', position: { x: 91, y: 241 } },
+          ], 
           clues: [ "Trouvez la clé sous le tapis." ]
         },
-        { id: 3, name: 'Cuisine', description: 'Vous êtes dans la', image: require('@/assets/cuisine.jpeg'), isLocked: true, objects: [
-          { id: 11, name: 'M1', position: { x: 634, y: 285 } },
-          { id: 12, name: 'Ta1', position: { x: 594, y: 708 } },
-          { id: 13, name: 'P1', position: { x: 1270, y: 141 } },
-        ] },
-        { id: 4, name: 'entrée', description: 'Vous êtes dans la', image: require('@/assets/entree.jpg'), isLocked: true, objects: [
-          { id: 14, name: 'Porte', position: { x: 911, y: 433 } },
-          { id: 15, name: 'T6s', position: { x: 91, y: 241 } },
-        ] },
-        { id: 5, name: 'controle', description: 'Vous êtes dans la', image: require('@/assets/controle.png'), isLocked: false, 
+        { id: 5, name: 'controle', description: 'Vous êtes dans la', image: require('@/assets/controle.png'), isLocked: true, 
           objects: [
             {id: 16, name: 'Porte1', position: { x: 135, y: 507 } },
             {id: 17, name: 'Porte2', position: { x: 1466, y: 457 } },
           ],
           clues: [ "Trouvez la clé sous le tapis." ]
         },
-        { id: 6, name: 'salle à manger', description: 'Vous êtes dans le', image: require('@/assets/salle_manger.jpg'), isLocked: true, },
-        { id: 7, name: 'salle de bain', description: 'Vous êtes dans la', image: require('@/assets/salledebain.jpeg'), isLocked: true, },
-        { id: 8, name: 'salon', description: 'Vous êtes dans le', image: require('@/assets/salon.jpg'), isLocked: true, },
-        { id: 9, name: 'chambre', description: 'Vous êtes dans le', image: require('@/assets/chambre.jpg'), isLocked: true }
+        { id: 6, name: 'salle à manger', description: 'Vous êtes dans le', image: require('@/assets/salle_manger.jpg'), isLocked: true,
+          objects: [
+            { id: 14, name: 'horloge', position: { x: 1104, y: 123 } },
+            { id: 15, name: 'Assiette', position: { x: 475, y: 763 } },
+            { id: 16, name: 'Armoire', position: { x: 1509, y: 437 } },
+          ], 
+          clues: [ "Trouvez la clé sous le tapis." ]
+         },
+         { 
+          id: 7, 
+          name: 'salle de bain', 
+          description: 'Vous êtes dans la', 
+          image: require('@/assets/salledebain.jpeg'), 
+          isLocked: true, 
+          objects: [
+            { id: 17, name: 'Miroir', position: { x: 194, y: 216 }, isEnigma: true }, // Miroir pour l'énigme
+            { id: 19, name: 'Lavabo', position: { x: 299, y: 566 }, isUseless: true }, // Objet inutile
+            { id: 20, name: 'Baignoire', position: { x: 770, y: 640 } } // Nouvel objet : Baignoire
+          ],
+          clues: ["Regardez attentivement le miroir pour trouver un indice."]
+        },
+        { 
+          id: 8, 
+          name: 'salon', 
+          description: 'Vous êtes dans le', 
+          image: require('@/assets/salon.jpg'), 
+          isLocked: true, 
+          objects: [
+            { id: 21, name: 'Tableau', position: { x: 335, y: 342 }, clue: "En bas du cadre, un chiffre est discrètement gravé : 12." },
+            { id: 22, name: 'Vase', position: { x: 139, y: 492 }, clue: "Sous le vase, un petit chiffre est inscrit : 8." },
+            { id: 23, name: 'Table basse', position: { x: 800, y: 764 }, clue: "Une gravure sur un coin indique le nombre : 6." },
+            { id: 24, name: 'Coffre', position: { x: 614, y: 437 }, isEnigma: true }
+          ],
+          clues: ["Trouvez les chiffres cachés dans les objets et additionnez-les pour ouvrir le coffre."]
+        },
+        { 
+          id: 9, 
+          name: 'chambre', 
+          description: 'Vous êtes dans le', 
+          image: require('@/assets/chambre.jpg'), 
+          isLocked: true, 
+          objects: [
+            { id: 25, name: 'ChambreTableau', position: { x: 100, y: 150 }, clue: "En bas du cadre, un chiffre est discrètement gravé : 12." },
+            { id: 26, name: 'ChambreHorloge', position: { x: 300, y: 250 }, clue: "Sous le vase, un petit chiffre est inscrit : 8." },
+            { id: 27, name: 'ChambreLit', position: { x: 500, y: 350 }, clue: "Une gravure sur un coin indique le nombre : 6." },
+            { id: 28, name: 'ChambreCoffre', position: { x: 700, y: 450 }, isEnigma: true }
+          ],
+          clues: ["Trouvez les chiffres cachés dans les objets et additionnez-les pour ouvrir le coffre."]
+        }
       ],
       selectedScreen: null,
       showDoorImage: false,
@@ -169,6 +255,65 @@ export default {
     }
   },
   methods: {
+    handleCoffreEnigmaChambre() {
+      const userAnswer = prompt("Entrez le code à trois chiffres pour ouvrir le coffre :");
+      if (userAnswer && userAnswer === "26") {
+        alert("Bravo ! Vous avez résolu l'énigme. Le coffre s'ouvre et vous trouvez une clé.");
+        const key = { id: 1004, name: 'Clé de la salle suivante', effect: 'Ouvre la porte de la salle suivante' };
+        if (!this.inventory.some(item => item.id === key.id)) {
+          this.inventory.push(key);
+        }
+
+        // Débloquer la salle suivante (par exemple, la salle 10)
+        const salleSuivante = this.screens.find(screen => screen.id === 10);
+        if (salleSuivante) {
+          salleSuivante.isLocked = false;
+          alert("La salle suivante est maintenant déverrouillée.");
+        }
+      } else {
+        alert("Code incorrect. Essayez encore !");
+      }
+    },
+    handleBaignoireAudioEnd() {
+      // Ajouter le médaillon à l'inventaire avec une clé
+      const medaillon = { 
+        id: 1002, 
+        name: 'Médaillon', 
+        effect: 'Un médaillon ancien et rouillé contenant une clé', 
+        hasKey: true // Propriété pour indiquer que le médaillon contient une clé
+      };
+      if (!this.inventory.some(item => item.id === medaillon.id)) {
+        this.inventory.push(medaillon);
+        alert("La baignoire a été vidée. Vous avez trouvé un médaillon au fond de celle-ci.");
+      } else {
+        alert("Vous avez déjà ce médaillon.");
+      }
+    },
+    handleCoffreEnigma() {
+      const userAnswer = prompt("Entrez le code à trois chiffres pour ouvrir le coffre :");
+      if (userAnswer && userAnswer === "26") {
+        alert("Bravo ! Vous avez résolu l'énigme. Le coffre s'ouvre et vous trouvez une clé.");
+        const key = { id: 1003, name: 'Clé de la chambre', effect: 'Ouvre la porte de la chambre' };
+        if (!this.inventory.some(item => item.id === key.id)) {
+          this.inventory.push(key);
+        }
+
+        // Débloquer la salle suivante (chambre)
+        const chambre = this.screens.find(screen => screen.id === 9);
+        if (chambre) {
+          chambre.isLocked = false;
+          alert("La chambre est maintenant déverrouillée.");
+        }
+      } else {
+        alert("Code incorrect. Essayez encore !");
+      }
+    },
+    closeRepasImage() {
+      this.showRepasImage = false; // Masquer l'image repas.png
+    },
+    closeMedaillonImage() {
+      this.showMedaillonImage = false; // Masquer l'image medaillon.png
+    },
     playAudio() {
       if (this.isLoadingProgress) return; // Ne pas jouer l'audio si une progression est en cours de chargement
       const audio = this.$refs.audioPlayer;
@@ -221,45 +366,6 @@ export default {
       const screen = this.screens.find(screen => screen.id === screenId);
       return screen ? screen.objects : [];
     },
-    interactWithObject(object) {
-      if (object.name === 'Porte1') {
-        this.showDoorImage = true;
-        this.doorImage = require('@/assets/femme.png'); // Image pour la porte 1
-        const audio = this.$refs.doorAudio;
-        if (audio) {
-          audio.play();
-        }
-
-        setTimeout(() => {
-          this.closeDoor();
-        }, 6000);
-      } else if (object.name === 'Porte2') {
-        this.showDoorImage = true;
-        this.doorImage = require('@/assets/cave.jpeg'); // Image pour la porte 2
-        const audio = this.$refs.door2Audio;
-        if (audio) {
-          audio.play();
-        }
-
-        setTimeout(() => {
-          this.closeDoor();
-        }, 8000); // Durée de l'audio "iamcomingforyou.mp3"
-      } else if (object.name === 'Livre' && object.isEnigma) {
-        this.showEnigma(); // Afficher l'énigme de la bibliothèque
-      } else if (object.name === 'C1' && object.isEnigma) {
-        this.showGalerieEnigma(); // Afficher l'énigme de la galerie
-      } else if (object.isUseless) {
-        alert("Vous n'avez rien trouvé grâce à cet objet."); // Message pour les objets inutiles
-      } else {
-        alert(`Vous avez interagi avec : ${object.name}`);
-        if (!this.inventory.some(item => item.id === object.id)) {
-          this.inventory.push(object);
-          alert(object.effect);
-        } else {
-          alert('Cet objet est déjà dans votre inventaire.');
-        }
-      }
-    },
     closeDoor() {
       this.showDoorImage = false;
       const audio1 = this.$refs.doorAudio;
@@ -298,20 +404,150 @@ export default {
     showGalerieEnigma() {
       const enigmaText = `
         Énigme : 
-        "Je suis composé de quatre chiffres.
-        Le premier est le double du deuxième.
-        Le troisième est la moitié du premier.
-        Le quatrième est la somme du premier et du troisième.
-        Qui suis-je ?"
+        "L'âge est votre bouée de sauvetage.
+
+        Trouvez ce code et entrez-le pour déverrouiller la porte."
       `;
       const userAnswer = prompt(enigmaText);
 
-      if (userAnswer && userAnswer === "8426") {
-        alert("Bravo ! Vous avez résolu l'énigme. La porte 2 de la salle de contrôle est maintenant ouverte.");
+      if (userAnswer && userAnswer === "99") {
+        alert("Bravo ! Vous avez résolu l'énigme. La porte est maintenant déverrouillée.");
         this.inventory.push({ id: 1000, name: 'Code secret', effect: 'Ouvre la porte 2 de la salle de contrôle' });
         this.currentScore += 1000; // Ajouter 1000 points pour la résolution de l'énigme
+
+        // Débloquer la salle 3 (cuisine)
+        const cuisine = this.screens.find(screen => screen.id === 3);
+        if (cuisine) {
+          cuisine.isLocked = false;
+        }
       } else {
         alert("Réponse incorrecte. Essayez encore !");
+      }
+    },
+    interactWithObject(object) {
+      if (object.name === 'Porte1') {
+        this.showDoorImage = true;
+        this.doorImage = require('@/assets/femme.png');
+        const audio = this.$refs.doorAudio;
+        if (audio) {
+          audio.play();
+        }
+
+        setTimeout(() => {
+          this.closeDoor();
+        }, 6000);
+      } else if (object.name === 'Porte2') {
+        const hasCode = this.inventory.some(item => item.name === 'Code secret');
+        if (hasCode) {
+          alert("Vous utilisez le code secret pour ouvrir la porte 2 de la salle de contrôle.");
+          this.showDoorImage = true;
+          this.doorImage = require('@/assets/cave.jpeg');
+          const audio = this.$refs.door2Audio;
+          if (audio) {
+            audio.play();
+          }
+
+          setTimeout(() => {
+            this.closeDoor();
+          }, 8000);
+        } else {
+          alert("Cette porte est verrouillée. Trouvez le code secret dans la galerie.");
+        }
+      } else if (object.name === 'Livre' && object.isEnigma) {
+        this.showEnigma();
+      } else if (object.name === 'Couloir') {
+        this.showGalerieEnigma();
+      } else if (object.name === 'Tableau' || object.name === 'Vase' || object.name === 'Table basse' || object.name === 'ChambreHorloge' || object.name === 'ChambreTableau' || object.name === 'ChambreLit') {
+        alert(object.clue); // Afficher l'indice de l'objet
+      } else if (object.isUseless) {
+        alert("Vous n'avez rien trouvé grâce à cet objet.");
+      } else if (object.name === 'Porte') {
+        alert("Vous avez réussi à sortir du manoir ! Votre score final est : " + this.currentScore);
+        this.saveProgress();
+        this.$router.push('/lobby');
+      } else if (object.name.startsWith('T')) {
+        alert(`Ce tableau représente un personnage âgé de ${object.age} ans.`);
+      } else if (object.name === 'Tiroir') {
+        const key = { id: 1001, name: 'Clé de la porte', effect: 'Ouvre la porte de l\'entrée' };
+        if (!this.inventory.some(item => item.id === key.id)) {
+          this.inventory.push(key);
+          alert("Vous avez trouvé une clé dans le tiroir !");
+        } else {
+          alert("Vous avez déjà cette clé.");
+        }
+      } else if (object.name === 'Assiette') {
+        alert("Retrouvez l'heure du dernier repas.");
+      } else if (object.name === 'Armoire') {
+        this.showRepasImage = true;
+      } else if (object.name === 'horloge') {
+        const userAnswer = prompt("Entrez l'heure du dernier repas (format XXh) :");
+        if (userAnswer && userAnswer.toLowerCase() === '20h') {
+          alert("Bravo ! Vous avez résolu l'énigme. La salle à manger est maintenant déverrouillée.");
+          this.currentScore += 1000;
+
+          // Débloquer la salle suivante (si nécessaire)
+          const salleSuivante = this.screens.find(screen => screen.id === 7);
+          if (salleSuivante) {
+            salleSuivante.isLocked = false;
+          }
+        } else {
+          alert("Réponse incorrecte. Essayez encore !");
+        }
+      } else if (object.name === 'Miroir') {
+        alert("L’eau est sombre. En y plongeant la main, vous sentez un objet métallique : un médaillon rouillé. Il est bloqué… Il faut vider l’eau pour le récupérer.");
+      } else if (object.name === 'Medaillon') {
+        this.showMedaillonImage = true; // Afficher l'image medaillon.png
+      } else if (object.name === 'Baignoire') {
+        const audio = this.$refs.baignoireAudio;
+        if (audio) {
+          audio.play(); // Jouer le son de la baignoire
+        }
+      } else if (object.name === 'Coffre') {
+        this.handleCoffreEnigma();
+      } else if (object.name === 'ChambreCoffre') {
+        this.handleCoffreEnigmaChambre();
+      } else {
+        alert(`Vous avez interagi avec : ${object.name}`);
+        if (!this.inventory.some(item => item.id === object.id)) {
+          this.inventory.push(object);
+          alert(object.effect);
+        } else {
+          alert('Cet objet est déjà dans votre inventaire.');
+        }
+      }
+    },
+    useItem(item) {
+      if (item.name === 'Clé de la porte') {
+        // Déverrouiller la pièce 4 (Entrée)
+        const entree = this.screens.find(screen => screen.id === 4);
+        if (entree) {
+          entree.isLocked = false;
+          alert("Vous avez utilisé la clé pour déverrouiller l'entrée.");
+          this.inventory = this.inventory.filter(i => i.id !== item.id); // Retirer la clé de l'inventaire
+        }
+      } else if (item.name === 'Médaillon') {
+        this.showMedaillonImage = true; // Afficher l'image medaillon.png
+      } else {
+        alert(`Vous avez utilisé : ${item.name}`);
+      }
+    },
+    handleMedaillonClick() {
+      // Vérifier si le médaillon contient une clé
+      const medaillon = this.inventory.find(item => item.name === 'Médaillon' && item.hasKey);
+      if (medaillon) {
+        alert("Vous avez trouvé une clé cachée dans le médaillon ! Elle vous permet d'accéder à la salle suivante.");
+
+        // Débloquer la salle suivante (par exemple, la salle 8)
+        const salleSuivante = this.screens.find(screen => screen.id === 8);
+        if (salleSuivante) {
+          salleSuivante.isLocked = false;
+          alert("La salle suivante est maintenant déverrouillée.");
+        }
+
+        // Retirer la clé du médaillon (optionnel)
+        medaillon.hasKey = false;
+      } else {
+        alert("Le médaillon ne contient plus de clé.");
       }
     },
     exitGame() {
@@ -585,4 +821,91 @@ body {
   z-index: 999;
 }
 
+.repas-image-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.repas-image-content {
+  position: relative;
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  text-align: center;
+}
+
+.repas-image {
+  max-width: 80%;
+  max-height: 80vh;
+  object-fit: contain;
+  border-radius: 10px;
+}
+
+.close-button {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: #ff4500;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.close-button:hover {
+  background: #cc3700;
+}
+
+.medaillon-image-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.medaillon-image-content {
+  position: relative;
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  text-align: center;
+}
+
+.medaillon-image {
+  max-width: 80%;
+  max-height: 80vh;
+  object-fit: contain;
+  border-radius: 10px;
+}
+
+.close-button {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: #ff4500;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.close-button:hover {
+  background: #cc3700;
+}
 </style>
